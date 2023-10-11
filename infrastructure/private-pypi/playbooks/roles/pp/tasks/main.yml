@@ -1,0 +1,59 @@
+---
+- name: Install private-pypi server
+  pip:
+    name:
+      - private-pypi==0.2.0
+    virtualenv: /usr/share/venv/pypi
+    virtualenv_python: /usr/bin/python3.8
+    virtualenv_command: /usr/local/bin/virtualenv
+    state: present
+- name: Optionally configure GitHub index repository
+  shell: |
+    source /usr/share/venv/pypi/bin/activate
+    private_pypi github.init_pkg_repo {{ repository }} {{ github_token }} {{ repository }} --owner {{ repo_owner }}
+    deactivate
+  when: configure_github
+- name: Create private config dir
+  file:
+    path: /etc/pypi/
+    state: directory
+    owner: root
+    group: pypi
+    mode: 0770
+- name: Put down secrets file
+  template:
+    src: secret.toml.j2
+    dest: /etc/pypi/pypi-secret.toml
+    owner: root
+    group: pypi
+    mode: 0640
+- name: Put down config file
+  template:
+    src: pypi.toml.j2
+    dest: /etc/pypi/pypi.toml
+    owner: root
+    group: pypi
+    mode: 0640
+- name: Create runtime dir
+  file:
+    path: /var/run/pypi
+    state: directory
+    owner: root
+    group: pypi
+    mode: 0770
+- name: Create pypi systemd service
+  block:
+  - name: Create service file
+    template:
+      src: service.j2
+      dest: /usr/lib/systemd/system/pypi.service
+      owner: root
+      group: root
+      mode: 0644
+  - name: Reload service scripts
+    command: systemctl daemon-reload
+  - name: Enable service
+    service:
+      name: pypi.service
+      state: started
+      enabled: true

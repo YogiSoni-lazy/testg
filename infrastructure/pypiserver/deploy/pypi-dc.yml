@@ -1,0 +1,67 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: pypi
+  name: pypi
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    app: pypi
+    deploymentconfig: pypi
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: pypi
+        deploymentconfig: pypi
+    spec:
+      volumes:
+        - name: pypi-volume-packages
+          persistentVolumeClaim:
+            claimName: pypi
+        - name: pypi-passwords
+          secret:
+            secretName: htpasswd-secret
+            defaultMode: 0640
+      containers:
+      - image: quay.io/jrigsbee/pypi
+        imagePullPolicy: Always
+        name: pypi
+        ports:
+        - containerPort: 8180
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/pypiserver/packages
+          name: pypi-volume-packages
+        - mountPath: /etc/pypiserver
+          name: pypi-passwords
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+  test: false
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - pypi
+      from:
+        kind: ImageStreamTag
+        name: pypi:latest
+    type: ImageChange

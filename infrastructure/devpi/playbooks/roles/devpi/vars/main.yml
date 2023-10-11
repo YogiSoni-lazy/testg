@@ -1,0 +1,6 @@
+---
+server_port: 4040
+server_hostname: pypi.dev.nextcle.com
+allowed_services:
+  - http
+  - https

@@ -1,0 +1,4 @@
+--index-url http://grading-index2:${PP_TOKEN}@pypi.dev.nextcle.com:8888/simple/
+--extra-index-url https://pypi.org/simple/
+--trusted-host pypi.dev.nextcle.com
+rht-labs-core

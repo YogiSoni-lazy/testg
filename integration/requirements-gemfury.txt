@@ -1,0 +1,4 @@
+--index-url https://${FURY_AUTH}:@pypi.fury.io/redhattraining/
+#--index-url https://pypi.fury.io/redhattraining/
+--extra-index-url https://pypi.org/simple/
+rht-labs-gl006

@@ -1,0 +1,5 @@
+---
+- name: Test working with vars
+  template:
+    src: test.j2
+    dest: "/tmp/examplePlaybookVars"

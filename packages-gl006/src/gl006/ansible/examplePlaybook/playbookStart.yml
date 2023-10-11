@@ -1,0 +1,37 @@
+---
+- name: Preparing the system for the exercise
+  hosts: localhost
+  become: no
+  gather_facts: no
+
+  tasks:
+  - name: The required packages are installed
+    debug:
+      msg: "Packages installed"
+
+  - name: The configuration file is deployed
+    copy:
+      src: files/test.conf
+      dest: /tmp/test.config
+      mode: '0600'
+
+  - name: Write a sample file
+    include_role:
+      name: test
+
+  - name: Test including a role from core common
+    include_role:
+      name: common-test
+
+  - name: Test including a role from ocp common
+    include_role:
+      name: ocp-test
+
+  - name: The services are started
+    debug:
+      msg: "Services started"
+
+  - name: The firewall ports are opened
+    debug:
+      msg: "Firewall ports opened"
+...

@@ -1,0 +1,29 @@
+# Integration Testing for Lab Framework
+
+. Install the sample course lab modules
++
+```
+$ FURY_AUTH=<token> pip install -r requirements.txt
+```
++
+. Make sure the *_/etc/rht_* file specifies at least
+the following values:
++
+```
+RHT-COURSE=GL006
+RHT-COURSEGRADING=0.0.1
+```
++
+. Use the *_lab_* command to test the library
+
+```
+lab --help
+lab start helloWorld
+lab grade helloWorld
+lab finish helloWorld
+```
+
+To change the version of the lab modules being used:
+```
+lab load --env test --version 0.0.1
+```

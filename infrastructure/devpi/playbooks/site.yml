@@ -1,0 +1,13 @@
+---
+- name: Establish environment for devpi
+  hosts: server
+  become: true
+  roles:
+    - python
+    - accounts
+
+- name: Install devpi
+  hosts: server
+  become: true
+  roles:
+    - devpi

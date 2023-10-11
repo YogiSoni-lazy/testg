@@ -1,0 +1,47 @@
+---
+- name: Install Python and Python Tools
+  become: true
+  package:
+    name:
+      - python3-virtualenv
+      - bash-completion
+      - python3-psutil
+
+- name: Remove Bash lab command
+  become: true
+  file:
+    path: /usr/local/bin/lab
+    state: absent
+
+- name: Install course lab package
+  pip:
+    editable: no
+    virtualenv: /home/student/.venv/labs
+    state: present
+    name: "rht-labs-{{ course }}=={{ course_version }}"
+    extra_args: --extra-index-url https://pypi.apps.tools-na100.dev.ole.redhat.com/repository/labs/simple/
+
+- name: Put lab command in path from venv
+  become: true
+  copy:
+    src: labs.sh
+    dest: /etc/profile.d/labs.sh
+
+- name: Select course package
+  command: "lab select {{ course }}"
+
+- name: Generate tab completion script
+  shell: |
+    lab completion bash > labs.sh
+
+- name: Install tab completion
+  become: true
+  command: mv /home/student/labs.sh /etc/bash_completion.d
+
+- name: Configure version lock
+  become: true
+  lineinfile:
+    path: /etc/rht
+    regexp: '^RHT_VERSION_LOCK='
+    line: 'RHT_VERSION_LOCK="{{ version_lock }}"'
+    state: present

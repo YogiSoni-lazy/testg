@@ -1,0 +1,10 @@
+[Unit]
+Description=Private PyPI Server
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/bin/sh -c 'source /usr/share/venv/pypi/bin/activate && /usr/share/venv/pypi/bin/private_pypi server /var/run/pypi --config /etc/pypi/pypi.toml --admin_secret /etc/pypi/pypi-secret.toml --port {{ server_port }}'
+
+[Install]
+WantedBy=multi-user.target

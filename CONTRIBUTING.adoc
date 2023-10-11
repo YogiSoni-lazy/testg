@@ -1,0 +1,49 @@
+# Contributions to DynoLabs
+
+Thank you for your interest in contributing to the DynoLabs project. We are
+happy to have you on board! The following gives information on how to contribute
+and some guiding principles.
+
+## Governance
+Currently the team of DevOps Lab Engineers (DLE) serve as the governance board
+and approving members of the team for any merges into the main branch.  If you
+wish to make changes that affect the core libraries, please discuss the
+architecture and types of changes you wish to make with a member of this team
+before submitting a pull
+request. This ensures that your ideas and changes will have a smooth approval
+process and not waste any of your time having to re-work your code.
+
+## How to Contribute
+Please create a development branch from the main branch and code your
+contribution to the library in the new branch.
+Submit a PR to merge your changes into the main
+branch and the core team will review/merge your PR.
+
+## Code Placement
+Please note the following about where to contribute code.
+
+- If your code will be used by all courses, contribute your code to the
+_src/labs_ portion of the repository.
+- If your code is an example of how to use core functionality, contribute your
+code to the _packages-gl006_ portion of the repository.
+- If your code is a common routine for a particular product, e.g. OpenShift,
+please contribute that to the appropriate repository, e.g. _rht-labs-ocp_.
+- If your code is relevant only to your course, please contribute your code to
+the specific course repository.
+
+## Coding Conventions
+
+- Python style guide: https://www.python.org/dev/peps/pep-0008/.
+
+- Linter: flake8 will be used to check coding standards. See https://flake8.pycqa.org/en/latest/.
+
+- Target Python version 3.6
+
+ You may use higher versions for development but it must work with this version of Python
+
+- Use data typing hints (is this the right terminology?)
+
+## Version Bumping
+Make sure to increase the version number appropriately
+when submitting a PR.  Adjustments to the version may be made by Governance
+if required due to conflicting PRs.

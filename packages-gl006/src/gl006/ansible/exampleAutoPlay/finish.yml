@@ -1,0 +1,12 @@
+---
+- name: Finish tasks for the exercise
+  hosts: localhost
+  become: no
+  gather_facts: no
+
+  tasks:
+  - name: Sample finish task
+    debug:
+      msg: "Finish task finished"
+
+...

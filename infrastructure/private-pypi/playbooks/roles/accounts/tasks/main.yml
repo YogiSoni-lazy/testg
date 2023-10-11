@@ -1,0 +1,6 @@
+---
+- name: Create pypi user
+  user:
+    name: pypi
+    comment: private-pypi service account
+    state: present

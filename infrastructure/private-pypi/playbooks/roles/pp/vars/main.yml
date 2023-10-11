@@ -1,0 +1,6 @@
+---
+configure_github: false
+repository: grading-index
+repo_owner: RedHatTraining
+#github_token: put in secret file
+server_port: 8888

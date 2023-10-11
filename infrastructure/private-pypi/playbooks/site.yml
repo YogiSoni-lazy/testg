@@ -1,0 +1,13 @@
+---
+- name: Establish environment for private-pypi
+  hosts: server
+  become: true
+  roles:
+    - python
+    - accounts
+
+- name: Install private-pypi
+  hosts: server
+  become: true
+  roles:
+    - pp

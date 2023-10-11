@@ -1,0 +1,77 @@
+---
+# tasks file for remove-exercise-dirs
+- name: Fail if exercise is undefined
+  fail:
+    msg: The "exercise" variable must be defined.
+  when: exercise is not defined
+
+- name: Check if "{{ base_labs_dir }}" exists
+  stat:
+    path: "{{ base_labs_dir }}"
+  register: main_labs_dir
+
+- block:
+    - name: Check if "{{ base_labs_dir }}/{{ exercise['name'] }}" exists
+      stat:
+        path: "{{ base_labs_dir }}/{{ exercise['name'] }}"
+      register: labs_dir
+
+    - name: Run lsof on exercise labs directory
+      shell: "lsof +D {{ base_labs_dir }}/{{ exercise['name'] }} 2> /dev/null | tail -n+2"
+      changed_when: False
+      register: lsof_labs
+      when: labs_dir['stat']['exists']
+
+    - name: Fail if user in labs directory
+      fail:
+        msg: User in "{{ base_labs_dir }}/{{ exercise['name'] }}" (or subdirectory).
+      when:
+        - labs_dir['stat']['exists']
+        - lsof_labs is defined
+        -  "'bash' in lsof_labs['stdout']"
+
+    - name: Removing directory "{{ base_labs_dir }}/{{ exercise['name'] }}"
+      file:
+        path: "{{ base_labs_dir }}/{{ exercise['name'] }}"
+        state: absent
+      when:
+        - labs_dir['stat']['exists']
+        - lsof_labs is defined
+        -  "'bash' not in lsof_labs['stdout']"
+  when:
+    - main_labs_dir['stat']['exists']
+    - "'labs' in exercise['dirs']"
+
+- name: Check if "{{ base_solutions_dir }}" exists
+  stat:
+    path: "{{ base_solutions_dir }}"
+  register: main_solutions_dir
+
+- block:
+    - name: Check if "{{ base_solutions_dir }}/{{ exercise['name'] }}" exists
+      stat:
+        path: "{{ base_solutions_dir }}/{{ exercise['name'] }}"
+      register: solutions_dir
+
+    - name: Run lsof on exercise solutions directory
+      shell: "lsof +D {{ base_solutions_dir }}/{{ exercise['name'] }} 2> /dev/null | tail -n+2"
+      changed_when: False
+      register: lsof_solutions
+
+    - name: Fail if user in solutions directory
+      fail:
+        msg: User in "{{ base_solutions_dir }}/{{ exercise['name'] }}" (or subdirectory).
+      when:
+        - lsof_solutions is defined
+        -  "'bash' in lsof_solutions['stdout']"
+
+    - name: Removing directory "{{ base_solutions_dir }}/{{ exercise['name'] }}"
+      file:
+        path: "{{ base_solutions_dir }}/{{ exercise['name'] }}"
+        state: absent
+      when:
+        - lsof_solutions is defined
+        -  "'bash' not in lsof_solutions['stdout']"
+  when:
+    - main_solutions_dir['stat']['exists']
+    - "'solutions' in exercise['dirs']"

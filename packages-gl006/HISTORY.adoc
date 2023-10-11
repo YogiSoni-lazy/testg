@@ -1,0 +1,32 @@
+## Same Course for Lab Grading Framework
+
+[cols="1,1,1,4"]
+|===
+|Version
+|Date
+|Who
+|Description
+
+|0.0.3
+|01Feb21
+|J. Rigsbee
+|Initial major release
+
+|0.0.4
+|17Feb21
+|J. Rigsbee
+|Issue 72: Change the way config file is created
+Bumped the dependency on core to 2.0.3
+|===
+
+### Version 0.0.3
+This was the initial release that teams started working with.
+
+### Version 0.0.4
+The following RFEs and Bugs were addressed in this release.
+
+- Issue 72: Remove hack for how config file is generated when a course package is created.
++
+Removed the creation of the configuration file in the `setup.py` script.
+
+- Bump dependency to rht-labs-core==2.0.3

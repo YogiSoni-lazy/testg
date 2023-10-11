@@ -1,0 +1,9 @@
+---
+- name: Install PyPI Server
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: true
+  roles:
+    - accounts
+    - server

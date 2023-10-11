@@ -1,0 +1,132 @@
+---
+- name: Install server and web UI
+  become: true
+  become_user: devpi
+  block:
+  - name: Install server and web UI python packages
+    pip:
+      name:
+        - devpi-server==5.5.0
+        - devpi-web==4.0.4
+        - devpi-client==5.2.0
+      virtualenv: /home/devpi/.virtualenvs/devpi
+      state: present
+  - name: Create server directory
+    file:
+      state: directory
+      path: /home/devpi/server
+      owner: devpi
+      group: devpi
+      mode: 0755
+  - name: Create config directory
+    file:
+      state: directory
+      path: /home/devpi/.devpi
+      owner: devpi
+      group: devpi
+      mode: 0755
+  - name: Create server config file
+    template:
+      src: devpi-server.j2
+      dest: /home/devpi/.devpi/config.yml
+      owner: devpi
+      group: devpi
+      mode: 0644
+  - name: Initialize the server directory
+    command:
+      cmd: /home/devpi/.virtualenvs/devpi/bin/devpi-init --serverdir /home/devpi/server
+      creates: /home/devpi/server/.nodeinfo
+
+- name: Create devpi systemd service
+  block:
+  - name: Create server /etc/devpi-server
+    file:
+      state: directory
+      path: /etc/devpi-server
+      owner: root
+      group: root
+      mode: 0755
+  - name: Create secret file
+    file:
+      state: touch
+      path: /etc/devpi-server/secret
+      owner: root
+      group: devpi
+      mode: 0660
+  - name: Create service file
+    template:
+      src: service.j2
+      dest: /usr/lib/systemd/system/devpi.service
+      owner: root
+      group: root
+      mode: 0644
+  - name: Reload service scripts
+    command: systemctl daemon-reload
+  - name: Define SELinux rules for systemd service
+    shell: |
+      setsebool httpd_can_network_connect on -P
+      setsebool nis_enabled on -P
+      setsebool domain_can_mmap_files on -P
+      semanage permissive -a init_t
+      semanage permissive -a user_home_t
+  - name: Enable service
+    service:
+      name: devpi.service
+      state: started
+      enabled: true
+
+- name: Install nginx
+  block:
+  - name: Install nginx package
+    package:
+      name:
+        - nginx
+      state: present
+  - name: Install nginx default config
+    template:
+      src: nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+  - name: Install devpi nginx config
+    template:
+      src: nginx-devpi.j2
+      dest: /etc/nginx/conf.d/devpi.conf
+  - name: Activate nginx service
+    service:
+      name: nginx
+      state: started
+      enabled: yes
+  - name: install firewall
+    package:
+      name: firewalld
+      state: present
+  - name: Make sure firewall service is running
+    service:
+      name: firewalld
+      enabled: yes
+      state: started
+    tags:
+      - configure_firewall
+  - name: Allowing firewall rules for services
+    firewalld:
+      service: "{{ item }}"
+      zone: public
+      permanent: true
+      state: enabled
+      immediate: yes
+    with_items: "{{ allowed_services }}"
+    tags:
+      - configure_firewall
+
+- name: Secure root user
+  become: true
+  become_user: devpi
+  shell: |
+    source ~/.virtualenvs/devpi/bin/activate
+    devpi use http://localhost:4040
+    devpi login root --password ''
+    devpi user -m root password="{{ root_password }}"
+    devpi user -c test password="{{ index_password }}" email=jrigsbee@redhat.com
+    devpi user -c prod password="{{ index_password }}" email=jrigsbee@redhat.com
+    devpi index -c test/test
+    devpi index -c prod/prod
+    devpi logoff

@@ -1,0 +1,20 @@
+---
+- name: Cleaning up the system after the exercise
+  hosts: localhost
+  become: no
+  gather_facts: no
+
+  tasks:
+  - name: The required packages are removed
+    debug:
+      msg: "Packages removed"
+
+  - name: The configuration file is removed
+    file:
+      path: /tmp/test.config
+      state: absent
+
+  - name: The firewall ports are closed
+    debug:
+      msg: "Firewall ports closed"
+...

@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2021 Red Hat Training <training@redhat.com>
+#
+# All rights reserved.
+# No warranty, explicit or implied, provided.
+#
+# CHANGELOG
+#   * {{ changelog }}
+#   - original code
+
+###############################################################################
+#   How to use this template:
+#
+# 1. Save the file as chapter-keyword.py, don't use WordCaps or camelCase
+# 2. Adjust the CHANGELOG and docstring above.
+# 3. Rename the class using WordCaps
+# 4. Set the __LAB__ variable to match the file name
+#    (without the .py extension)
+# 5. Remove these "How to use this template" comments
+###############################################################################
+
+from labs.grading import AutoPlay
+
+class {{ class_name}}(AutoPlay):
+    __LAB__ = '{{ name }}'

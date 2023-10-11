@@ -1,0 +1,47 @@
+[metadata]
+name = rht-labs-{{ sku | lower }}
+description = Red Hat Training Labs for Course {{ sku }}
+url = https://github.com/RedHatTraining/{{ sku }}/
+long_description = file: README.md
+long_description_content_type = text/markdown
+author = {{ author }}
+license_file = LICENSE
+platforms = any
+classifiers =
+    Development Status :: 3 - Alpha
+    Intended Audience :: Students
+    Operating System :: MacOS :: MacOS X
+    Operating System :: Microsoft :: Windows
+    Operating System :: POSIX
+    Programming Language :: Python :: 3.6
+    Programming Language :: Python :: 3.7
+    Programming Language :: Python :: 3.8
+    Topic :: Training
+    Topic :: Utilities
+author-email = {{ author_email }}
+keywords = training, labs
+maintainer = {{ author }}
+maintainer-email = {{ author_email }}
+project_urls =
+    Source=https://github.com/RedHatTraining/{{ sku }}
+    Tracker=https://github.com/RedHatTraining/{{ sku }}/issues
+
+[options]
+packages = find:
+install_requires =
+    rht-labs-core~={{ core_version }}
+#   To include other modules, add more entries like
+#   rht-labs-<module>~=<latest_version>
+python_requires = >=3.6
+package_dir =
+    =src
+zip_safe = True
+
+[options.packages.find]
+where = src
+
+[sdist]
+formats = gztar
+
+[bdist_wheel]
+universal = true

@@ -1,0 +1,25 @@
+---
+- name: Grading student's work
+  hosts: localhost
+  become: no
+  gather_facts: no
+
+  tasks:
+  - name: The required packages are installed
+    debug:
+      msg: "Packages are installed"
+
+  # As an example of a failure: that task always fails
+  - name: The firewall ports are opened
+    fail:
+    when: True
+
+  - name: Get the configuration file details
+    stat:
+      path: /tmp/test.config
+    register: stat_result
+
+  - name: The configuration file exists
+    fail:
+    when: not stat_result.stat.exists
+...

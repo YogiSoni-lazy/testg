@@ -1,0 +1,8 @@
+# Config for tests
+
+rhtlab:
+  course:
+    sku: ts000
+  logging:
+    level: debug
+    path: /tmp/log/rht-labs-tests

@@ -1,0 +1,6 @@
+---
+- name: Create devpi user
+  user:
+    name: devpi
+    comment: devpi service account
+    state: present

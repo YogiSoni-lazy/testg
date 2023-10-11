@@ -1,0 +1,564 @@
+#
+# Copyright (c) 2020 Red Hat Training <training@redhat.com>
+#
+# All rights reserved.
+# No warranty, explicit or implied, provided.
+#
+# CHANGELOG
+#   * {{ changelog }}
+#   - original code
+
+"""
+Grading module for {{ sku }} {{ name }} guided exercise (or lab).
+
+This module either does start, grading, or finish for the
+{{ name }} guided exercise (or lab).
+"""
+
+#########################################################################
+#   How to use this template:
+#
+# 1. Save the file as chapter-keyword.py, don't use WordCaps or camelCase
+# 2. Adjust the CHANGELOG and docstring above.
+# 3. Define the hosts that are used in this activity in the _targets list.
+# 4. Rename the class using WordCaps
+# 5. Set the __LAB__ variable to match the file name
+#    (without the .py extension)
+# 6. Remove the methods that your lab script does not support.
+#    start, finish, or grade
+# 7. Remove these "How to use this template" comments
+#########################################################################
+
+import os
+import sys
+import logging
+import pkg_resources
+import requests
+import yaml
+
+from urllib3 import disable_warnings
+from urllib3.exceptions import InsecureRequestWarning
+from ocp import api
+from ocp.utils import OpenShift
+from ocp.api import OAuthException
+from kubernetes.config.config_exception import ConfigException
+from labs import labconfig
+from labs.common import labtools, userinterface
+
+# Course SKU
+SKU = labconfig.get_course_sku().upper()
+
+# List of hosts involved in that module. Before doing anything,
+# the module checks that they can be reached on the network
+_targets = [
+    "localhost",
+    {{ targets }}
+]
+
+# Default namespace for the resources
+NAMESPACE = "example"
+
+# Disable certificate validation
+disable_warnings(InsecureRequestWarning)
+
+# Change the class name to match your file name
+class {{ class_name }}(OpenShift):
+    """
+    Example OpenShift lab script for {{ sku }}
+    """
+    __LAB__ = "{{ name }}"
+
+    # Get the OCP host and port from environment variables
+    OCP_API = {
+        "user": os.environ.get("OCP_USER", "admin"),
+        "password": os.environ.get("OCP_PASSWORD", "redhat"),
+        "host": os.environ.get("OCP_HOST", "api.ocp4.example.com"),
+        "port": os.environ.get("OCP_PORT", "6443"),
+    }
+
+    # Initialize class
+    def __init__(self):
+        logging.debug("{} / {}".format(SKU, sys._getframe().f_code.co_name))
+        try:
+            super().__init__()
+        except Exception as e:
+            print("Error: %s" % e)
+            sys.exit(1)
+
+    # The following methods define which subcommands are supported
+    # (start, grade, finish).
+    # Remove the methods you do not need.
+
+    def start(self):
+        #######################################################################
+        #   How to use this template:
+        #
+        # The items dictionary lists the tasks to run in order.
+        # Each item describes a task.
+        # It is a dictionary with the following keys:
+        #   label:  Short, one line description of the task.
+        #   task:   Method or function to run. If not set, or set to None,
+        #           nothing is executed for that step.
+        #   failed: This is the result of the task execution. The function
+        #           defined by the "task" key must set that status to True or
+        #           False. This status is used to display the completion
+        #           status of the task.
+        #   msgs:   List of error messages. Those messages may be set by the
+        #           "task" function when the task fails. They are
+        #           displayed to provide additional information to students.
+        #           Each message in the list is a dictionary with the key
+        #           set to "text" and the text message as a value.
+        #           For example:
+        #               { "text": "The system cannot be reached"}
+        #
+        # Remove these "How to use this template" comments
+        #######################################################################
+
+
+        """
+        Prepare the system for starting the lab
+        """
+        items = [
+            {
+                "label": "Checking lab systems",
+                "task": labtools.check_host_reachable,
+                "hosts": _targets,
+                "fatal": True,
+            },
+            {
+                "label": "PING API",
+                "task": self._start_ping_api,
+                "host": self.OCP_API["host"],
+                "fatal": True,
+            },
+            {
+                "label": "Check API",
+                "task": self._start_check_api,
+                "host": self.OCP_API["host"],
+                "port": self.OCP_API["port"],
+                "fatal": True,
+            },
+            {
+                "label": "Cluster Ready",
+                "task": self._start_check_cluster_ready,
+                "fatal": True,
+            },
+            {
+                "label": "Project 'example' is not present",
+                "task": self._fail_if_exists,
+                "name": "example",
+                "type": "Project",
+                "api": "project.openshift.io/v1",
+                "namespace": "",
+                "fatal": True
+            },
+            {
+                "label": "Copy exercise files",
+                "task": labtools.copy_lab_files,
+                "lab_name": self.__LAB__,
+                "fatal": True,
+            },
+            {
+                "label": "Create resources",
+                "task": self._start_create_resources,
+            },
+        ]
+        userinterface.Console(items).run_items(action="Starting")
+
+    def grade(self):
+        """
+        Perform evaluation steps on the system
+        """
+        items = [
+            {
+                "label": "Checking lab systems",
+                "task": labtools.check_host_reachable,
+                "hosts": _targets,
+                "fatal": True,
+            },
+        ]
+        ui = userinterface.Console(items)
+        ui.run_items(action="Grading")
+        ui.report_grade()
+
+    def finish(self):
+        """
+        Perform post-lab cleanup
+        """
+        items = [
+            {
+                "label": "Checking lab systems",
+                "task": labtools.check_host_reachable,
+                "hosts": _targets,
+                "fatal": True,
+            },
+            {
+                "label": "Remove exercise files",
+                "task": labtools.delete_workdir,
+                "lab_name": self.__LAB__,
+                "fatal": True,                                                                                                                
+            },
+
+
+        ]
+        userinterface.Console(items).run_items(action="Finishing")
+
+    ###########################################################################
+    # Example Functions                                                       #
+    #                                                                         #
+    # Start tasks                                                             #
+    #                                                                         #
+    ###########################################################################
+
+    def _start_ping_api(self, item):
+        """
+        Execute a task to prepare the system for the lab
+        """
+        logging.debug("{} / {}".format(SKU, sys._getframe().f_code.co_name))
+        if item["host"] is None:
+            item["failed"] = True
+            item["msgs"] = [{"text": "OCP_HOST is not defined"}]
+            logging.info(item["msgs"])
+        else:
+            check = labtools.ping(item["host"])
+            for key in check:
+                item[key] = check[key]
+
+        # Return status to abort lab execution when failed
+        return item["failed"]
+
+    def _start_check_api(self, item):
+        logging.debug("{} / {}".format(SKU, sys._getframe().f_code.co_name))
+        if item["host"] is None or item["port"] is None:
+            item["failed"] = True
+            item["msgs"] = [
+                {"text": "OCP_HOST and OCP_PORT are not defined"}
+            ]
+            logging.info(item["msgs"])
+        else:
+            if api.isApiUp(item["host"], port=item["port"]):
+                item["failed"] = False
+            else:
+                item["failed"] = True
+                item["msgs"] = [
+                    {
+                        "text": "API could not be reached: "
+                        + "https://{}:{}/".format(item["host"], item["port"])
+                    }
+                ]
+                logging.info(item["msgs"])
+
+        # Return status to abort lab execution when failed
+        return item["failed"]
+
+    def _start_check_cluster_ready(self, item):
+        logging.debug("{} / {}".format(SKU, sys._getframe().f_code.co_name))
+
+        # Get resources from cluster to check API
+        self.oc_client.resources.get(
+            api_version="project.openshift.io/v1", kind="Project"
+        ).get()
+        self.oc_client.resources.get(api_version="v1", kind="Node").get()
+        self.oc_client.resources.get(api_version="v1", kind="Namespace").get()
+
+        # This only applies for OpenShift, not minishift
+        try:
+            v1_config = self.oc_client.resources.get(
+                api_version="config.openshift.io/v1", kind="ClusterVersion"
+            )
+            cluster_version = v1_config.get().items[0]
+            if cluster_version.spec.clusterID is None:
+                item["failed"] = True
+                item["msgs"] = [{"text": "Cluster ID could not be found"}]
+                logging.info(item["msgs"])
+            else:
+                item["failed"] = False
+        except Exception as e:
+            item["msgs"] = [{"text": "Cluster is not OpenShift"}]
+            logging.debug(e)
+
+    def _start_create_resources(self, item):
+        logging.debug("{} / {}".format(SKU, sys._getframe().f_code.co_name))
+        lab_name = self.__LAB__
+        lab_dir = os.path.join(
+            pkg_resources.resource_filename(__name__, "materials"),
+            "solutions",
+            lab_name,
+        )
+        item["msgs"] = []
+
+        try:
+            ###################################################################
+            # Define the resource body and create it
+            project = {
+                "apiVersion": "project.openshift.io/v1",
+                "kind": "Project",
+                "metadata": {
+                    "name": NAMESPACE,
+                },
+            }
+            logging.info(
+                "Create {}/{}".format(
+                    project["kind"],
+                    project["metadata"]["name"],
+                )
+            )
+            resource = self.oc_client.resources.get(
+                api_version=project["apiVersion"],
+                kind=project["kind"],
+            )
+            resource.create(body=project, namespace=None)
+            item["msgs"].append({"text": "Project"})
+
+            ###################################################################
+            # Create the resource using a wrapper function
+            # rht-labs-ocp.ocp.api.apply_resource
+
+            # Create ServiceAccount
+            logging.info("Create ServiceAccount")
+            serviceaccount_file = os.path.join(lab_dir, "serviceaccount.yaml")
+            api.apply_resource(
+                self.oc_client,
+                serviceaccount_file,
+                api_version="v1",
+                kind="ServiceAccount",
+                namespace=NAMESPACE,
+                verb="create",
+            )
+            item["msgs"].append({"text": "ServiceAccount from YAML file"})
+
+            ###################################################################
+            # Create or patch clusterrolebinding
+
+            logging.info("Create or patch ClusterRoleBinding")
+            clusterrolebinding_file = os.path.join(
+                lab_dir, "clusterrolebinding.yaml"
+            )
+            try:
+                api.apply_resource(
+                    self.oc_client,
+                    clusterrolebinding_file,
+                    api_version="rbac.authorization.k8s.io/v1",
+                    kind="ClusterRoleBinding",
+                    namespace=NAMESPACE,
+                    verb="create",
+                )
+            except Exception:
+                api.patch_resource(
+                    self.oc_client,
+                    clusterrolebinding_file,
+                    api_version="rbac.authorization.k8s.io/v1",
+                    kind="ClusterRoleBinding",
+                    namespace=NAMESPACE,
+                    verb="patch",
+                )
+            item["msgs"].append({"text": "ClusterRoleBinding from YAML file"})
+
+            ###################################################################
+            # Create all the resources contained in a file
+            # like "oc create -f file.yaml"
+
+            # Create resources from composite yaml file
+            resources_file = os.path.join(lab_dir, "resources.yaml")
+            logging.info("Creating resources from: {}".format(resources_file))
+            # Open the YAML file
+            with open(resources_file) as input_file:
+                content = input_file.read()
+                documents = yaml.load_all(content, Loader=yaml.SafeLoader)
+                # Repeat for every document in the YAML file
+                for element in documents:
+                    logging.info(
+                        "Create {}/{} from YAML".format(
+                            element["kind"],
+                            element["metadata"]["name"]
+                        )
+                    )
+                    resource = self.oc_client.resources.get(
+                        api_version=element["apiVersion"], kind=element["kind"]
+                    )
+                    resource.create(body=element, namespace=NAMESPACE)
+            item["msgs"].append({"text": "Lab resources from multi YAML file"})
+
+            # return success
+            item["failed"] = False
+
+        except Exception as e:
+            item["failed"] = True
+            item["msgs"] = [{"text": "Could not create resources"}]
+            item["exception"] = {
+                "name": e.__class__.__name__,
+                "message": str(e),
+            }
+            logging.debug(e)
+        return item["failed"]
+
+    ###########################################################################
+    # Grading tasks
+
+    def _grade_check_resources(self, item):
+        logging.debug("{} / {}".format(SKU, sys._getframe().f_code.co_name))
+        item["msgs"] = []
+
+        try:
+            # Get Project
+            logging.info("Get Project")
+            project = self.oc_client.resources.get(
+                api_version="project.openshift.io/v1",
+                kind="Project"
+            ).get(name=NAMESPACE)
+            project = project.to_dict()
+            item["msgs"].append({"text": "Project"})
+
+            # Get Namespace
+            logging.info("Get Namespace")
+            namespace = self.oc_client.resources.get(
+                api_version="v1",
+                kind="Namespace"
+            ).get(name=NAMESPACE)
+            namespace = namespace.to_dict()
+            item["msgs"].append({"text": "Namespace"})
+
+            # Get Deployment
+            logging.info("Get Deployment")
+            deployment = self.oc_client.resources.get(
+                api_version="apps/v1",
+                kind="Deployment"
+            ).get(name="nginx", namespace=NAMESPACE)
+            deployment = deployment.to_dict()
+            item["msgs"].append({"text": "Deployment"})
+
+            # Get Service
+            logging.info("Get Service")
+            service = self.oc_client.resources.get(
+                api_version="v1",
+                kind="Service"
+            ).get(name="nginx", namespace=NAMESPACE)
+            service = service.to_dict()
+            item["msgs"].append({"text": "Service"})
+
+            # Get Route
+            logging.info("Get Route")
+            route = self.oc_client.resources.get(
+                api_version="route.openshift.io/v1",
+                kind="Route"
+            ).get(name="nginx", namespace=NAMESPACE)
+            route = route.to_dict()
+            item["msgs"].append({"text": "Route"})
+
+            item["failed"] = False
+        except Exception as e:
+            item["failed"] = True
+            item["msgs"] = [{"text": "Could not get resources"}]
+            item["exception"] = {
+                "name": e.__class__.__name__,
+                "message": str(e),
+            }
+            logging.debug(e)
+        return item["failed"]
+
+    def _grade_check_route(self, item):
+        logging.debug("{} / {}".format(SKU, sys._getframe().f_code.co_name))
+
+        try:
+            # Get route
+            route = self.oc_client.resources.get(
+                api_version="route.openshift.io/v1", kind="Route"
+            ).get(name="nginx", namespace=NAMESPACE)
+            route = route.to_dict()
+
+            # Test the route resource to see if pods are working ok
+            route_url = "https://{}/".format(route["spec"]["host"])
+            response = requests.get(route_url, verify=False)
+            if response.status_code != 200:
+                item["failed"] = True
+                item["msgs"] = [{"text": "Route HTTP status code is not 200"}]
+            else:
+                item["failed"] = False
+
+        except Exception as e:
+            item["failed"] = True
+            item["msgs"] = [{"text": "Could not get resources"}]
+            item["exception"] = {
+                "name": e.__class__.__name__,
+                "message": str(e),
+            }
+            logging.debug(e)
+        return item["failed"]
+
+    ###########################################################################
+    # Finish tasks
+
+    def _finish_remove_resources(self, item):
+        logging.debug("{} / {}".format(SKU, sys._getframe().f_code.co_name))
+        item["msgs"] = []
+
+        try:
+            # Delete Route
+            logging.info("Delete Route")
+            self.oc_client.resources.get(
+                api_version="route.openshift.io/v1",
+                kind="Route"
+            ).delete(name="nginx", namespace=NAMESPACE)
+            item["msgs"].append({"text": "Route"})
+
+            # Delete Service
+            logging.info("Delete Service")
+            self.oc_client.resources.get(
+                api_version="v1",
+                kind="Service"
+            ).delete(name="nginx", namespace=NAMESPACE)
+            item["msgs"].append({"text": "Service"})
+
+            # Delete Deployment
+            logging.info("Delete Deployment")
+            self.oc_client.resources.get(
+                api_version="v1",
+                kind="Deployment"
+            ).delete(name="nginx", namespace=NAMESPACE)
+            item["msgs"].append({"text": "Deployment"})
+
+            # # Delete Namespace
+            # # (removed when "project" is deleted in OCP)
+            # logging.info("Delete Namespace")
+            # self.oc_client.resources.get(
+            #     api_version="v1",
+            #     kind="Namespace"
+            # ).delete(name=NAMESPACE)
+            # item["msgs"].append({"text": "Namespace"})
+
+            # Delete ServiceAccount
+            logging.info("Delete ServiceAccount")
+            self.oc_client.resources.get(
+                api_version="v1",
+                kind="ServiceAccount"
+            ).delete(name="nginx", namespace=NAMESPACE)
+            item["msgs"].append({"text": "ServiceAccount"})
+
+            # Return success
+            item["failed"] = False
+
+        except Exception as e:
+            item["failed"] = True
+            item["msgs"] = [{"text": "Could not delete resources"}]
+            item["exception"] = {
+                "name": e.__class__.__name__,
+                "message": str(e),
+            }
+            logging.debug(e)
+        return item["failed"]
+
+    def _delete_resource(self, item):
+        item["failed"] = False
+        try:
+            self.delete_resource(
+                item["api"],
+                item["kind"],
+                item["name"],
+                item["namespace"]
+            )
+        except Exception as e:
+            item["failed"] = True
+            item["msgs"] = [
+                {"text": "Failed removing %s: %s" % (item["kind"], e)}
+            ]
+            logging.debug(e)

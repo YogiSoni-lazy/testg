@@ -1,0 +1,5 @@
+---
+- name:
+  copy:
+    src: commonfile.txt
+    dest: /tmp/common.txt

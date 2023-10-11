@@ -1,0 +1,18 @@
+---
+- name: Add system account for PyPI server
+  user:
+    name: pypiserver
+    comment: PyPI service account
+    state: present
+    system: yes
+    shell: /sbin/nologin
+    createhome: no
+    home: /var/lib/pypiserver
+    group: wheel
+- name: Create system account home directory
+  file:
+    state: directory
+    path: /var/lib/pypiserver
+    mode: "g=u"
+    owner: pypiserver
+    group: wheel

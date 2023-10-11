@@ -1,0 +1,44 @@
+---
+- name: Install packages to support server
+  package:
+    name:
+      - httpd-tools
+    state: present
+
+- name: Create password file for PyPI server authentication
+  block:
+    - name: create config dir
+      file:
+        state: directory
+        path: /etc/pypiserver
+        owner: root
+        group: wheel
+        mode: "g=u"
+    - name: Create password file and admin user password
+      command: htpasswd -scb /etc/pypiserver/htpasswd pypi 'D3@dz4!62qq0'
+    - name: Change access rules for password file
+      file:
+        path: /etc/pypiserver/htpasswd
+        owner: root
+        group: wheel
+        mode: 0640
+
+- name: Create virtualenv and install pypiserver packages
+  pip:
+    virtualenv: /usr/share/venv/pypiserver
+    state: present
+    name:
+      - pypiserver==1.3
+      - passlib
+      - watchdog
+
+- name: Create working directories for server
+  file:
+    state: directory
+    dest: "{{ item }}"
+    owner: root
+    group: wheel
+    mode: 02775
+  with_items:
+    - /var/lib/pypiserver
+    - /var/lib/pypiserver/packages

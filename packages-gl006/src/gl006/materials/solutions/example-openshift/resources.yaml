@@ -1,0 +1,62 @@
+# Define all the resources that should be created to set up the lab in this file
+# Install the "oc neat" plugin to clean the unnecessary items:
+#   $ oc get project/example | oc neat > example.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: example
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: quay.io/redhattraining/nginx:1.19
+        name: nginx
+        ports:
+        - containerPort: 80
+        resources: {}
+      securityContext: {}
+      serviceAccount: nginx
+      serviceAccountName: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: example
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx
+  type: LoadBalancer
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nginx
+  namespace: example
+  labels:
+    app: nginx
+spec:
+  tls:
+    termination: edge
+  to:
+    kind: ""
+    name: nginx
+    weight: null

@@ -1,0 +1,5 @@
+---
+# vars file for remove-exercise-dirs
+base_dir: "/home/student/{{ lookup('file', '/etc/rht') | regex_search('RHT_COURSE=.*') | regex_replace('RHT_COURSE=') | upper }}"
+base_labs_dir: "{{ base_dir }}/labs"
+base_solutions_dir: "{{ base_dir }}/solutions"

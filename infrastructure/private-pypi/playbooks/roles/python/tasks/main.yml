@@ -1,0 +1,13 @@
+---
+- name: Install Python
+  package:
+    name:
+      - python38
+      - python38-pip
+      - policycoreutils-python-utils
+    state: present
+
+- name: Install virtualenv
+  pip:
+    name: virtualenv
+    state: present

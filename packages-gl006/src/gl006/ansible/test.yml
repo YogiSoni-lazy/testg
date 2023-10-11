@@ -1,0 +1,80 @@
+---
+# Sample commands from the main Ansible directory:
+# ansible-playbook test.yml --tags regular_error
+# ansible-playbook test.yml --tags new_error
+# ansible-playbook test.yml --tags regular_loop_errors
+# ansible-playbook test.yml --tags new_loop_errors
+# Test this playbook from the DynoLabs gl006 course with:
+# lab grade error-messages
+- name: Test playbook for displaying error messages
+  hosts: workstation
+  become: false
+  gather_facts: false
+  vars:
+    required_packages:
+      - mariadb-server
+      - mariadb
+      - openssh-clients
+      - httpd
+      - mod_ssl
+      - openssh-server
+  tasks:
+    # This is a "regular" error message because the error message
+    # does not start with with pattern '· '
+    - name: Display a regular error message
+      ansible.builtin.assert:
+        that: regular_error is defined
+        success_msg: The 'regular_error' variable is defined.
+        fail_msg: The 'regular_error' variable must be defined.
+      tags: regular_error
+
+    # Developers explicitly need to add '· ' to the start of an error
+    # message, such as in the following task, if they want the additional
+    # messages to be suppressed by DynoLabs. DO NOT quote the entire error
+    # message.
+    - name: Display new error message
+      ansible.builtin.assert:
+        that: new_error is defined
+        success_msg: The 'new_error' variable is defined.
+        fail_msg: · The 'new_error' variable must be defined.
+      tags: new_error
+
+    - name: Gather package facts
+      become: true
+      ansible.builtin.package_facts:
+      tags:
+        - regular_loop_errors
+        - new_loop_errors
+
+    # Playbook loops are handled differently by DynoLabs. Even if developers
+    # add '· ' to the start of an error message, DynoLabs continues to display
+    # additional messages for this task.
+    - name: Display regular error messages for a loop
+      ansible.builtin.assert:
+        that: item in ansible_facts['packages']
+        success_msg: The '{{ item }}' package is installed.
+        fail_msg: The '{{ item }}' package is not installed.
+      loop: "{{ required_packages }}"
+      tags: regular_loop_errors
+
+    # In addition to adding '· ' to the start of an error message, developers
+    # must use block/rescue, such as the following, in order to have DynoLabs
+    # suppress the additional messages.
+    - name: Package block
+      block:
+        # DO NOT specify a `success_msg`. When not specified, `success_msg`
+        # defaults to 'All assertions passed'. The `rescue` section filters
+        # out the 'All assertions passed' messages because they are not errors.
+        - name: Display new error messages for a loop
+          ansible.builtin.assert:
+            that: item in ansible_facts['packages']
+            fail_msg: · The '{{ item }}' package is not installed.
+          loop: "{{ required_packages }}"
+          register: package_checks
+
+      rescue:
+        - name: Show package check errors
+          ansible.builtin.assert:
+            that: package_checks['failed'] | bool == false
+            fail_msg: "{{ package_checks['results'] | rejectattr('msg', '==', 'All assertions passed') | map(attribute='msg') | list }}"
+      tags: new_loop_errors

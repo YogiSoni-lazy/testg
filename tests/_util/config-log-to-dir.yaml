@@ -1,0 +1,12 @@
+# Config for tests
+
+rhtlab:
+  course:
+    sku: ts000
+  logging:
+    level: debug
+    # Log to a dir
+    #   The trailing "/" makes DynoLabs log to a directory.
+    #   Each lab script generates a file in this dir
+    path: /tmp/log/rht-labs-tests-dir/
+ 

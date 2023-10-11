@@ -1,0 +1,9 @@
+localhost ansible_connection=local
+workstation.lab.example.com
+utility.lab.example.com
+servera.lab.example.com
+serverb.lab.example.com
+serverc.lab.example.com
+serverd.lab.example.com
+servere.lab.example.com
+serverf.lab.example.com
